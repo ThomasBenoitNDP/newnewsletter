@@ -25,13 +25,13 @@ contract newnewsletter is ERC5643 {
             - global mappings
     */
     // the contract owner
-    address private _owner;
+    address public _owner;
 
     // the news letter's author
-    address private _author;
+    address public _author;
 
     // Maxguests per Token 
-    uint256 _MaxGuests; 
+    uint256 public _MaxGuests; 
 
     // Mapping guests to tokenId
     // -> uint256(0) if is a new guest

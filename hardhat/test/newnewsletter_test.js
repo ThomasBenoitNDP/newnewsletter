@@ -1,3 +1,5 @@
+//import "hardhat/console.sol";
+
 const {
     time,
     loadFixture,
@@ -20,9 +22,9 @@ const {
         const [_owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1] = await ethers.getSigners();
 
         const Newnesletter = await ethers.getContractFactory("newnewsletter");
-        const newnewsletter = await Newnesletter.deploy(_author, _name, _symbol);
+        const newnewsletter = await Newnesletter.deploy(_author.address, _name, _symbol);
 
-        console.log("author :", _author)
+        //console.log("author :", _author)
         return { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1 };
     }
 
@@ -34,7 +36,7 @@ const {
         it("-> T.0.0 : Should set the right owner", async function () {
             const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
       
-            expect(await newnewsletter._owner()).to.equal(_owner);
+            expect(await newnewsletter._owner()).to.equal(_owner.address);
           });
 
          
@@ -42,28 +44,15 @@ const {
         it("-> T.0.1 : Should set the right author", async function () {
             const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
       
-            expect(await newnewsletter._author()).to.equal(_author);
+            expect(await newnewsletter._author()).to.equal(_author.address);
           });
 
-        /*
-        it("-> T.0.2 : Should set the right name", async function () {
-            const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
-      
-            expect(await newnewsletter._name()).to.equal(_name);
-          });
-
-        it("-> T.0.3 : Should set the right symbol", async function () {
-            const {newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
-      
-            expect(await newnewsletter._symbol()).to.equal(_symbol);
-          });
         
-        */
        
         it("-> T.0.4 : Should set the right  _MaxGuests", async function () {
             const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
       
-            expect(await newnewsletter. _MaxGuests()).to.equal(2);
+            expect(await newnewsletter._MaxGuests()).to.equal(2);
           });
         
         it("-> T.0.5 : Should emit an event on OwnerSet", async function () {
@@ -71,15 +60,15 @@ const {
     
             await expect()
               .to.emit(newnewsletter, "OwnerSet")
-              .withArgs(ethers.constants.AddressZero, _owner); 
+              .withArgs(ethers.constants.AddressZero, _owner.address); 
           });
     
         it("-> T.0.6 : Should emit an event on AuthorSet", async function () {
             const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1 } = await loadFixture(deployNewNewsLetter);
     
-            await expect()
+            await expect(newnewsletter.e())
               .to.emit(newnewsletter, "AuthorSet")
-              .withArgs(ethers.constants.AddressZero, _author); 
+              .withArgs(ethers.constants.AddressZero, _author.address); 
           });
 
           
