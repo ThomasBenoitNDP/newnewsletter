@@ -25,13 +25,13 @@ contract newnewsletter is ERC5643 {
             - global mappings
     */
     // the contract owner
-    address public _owner;
+    address private _owner;
 
     // the news letter's author
-    address public _author;
+    address private _author;
 
     // Maxguests per Token 
-    uint256 public _MaxGuests; 
+    uint256 private _MaxGuests; 
 
     // Mapping guests to tokenId
     // -> uint256(0) if is a new guest
@@ -228,6 +228,13 @@ contract newnewsletter is ERC5643 {
             return _author;
         }
 
+        /**
+        * @dev Return MaxGuests
+        * @return address of MaxGuests
+        */
+        function getMaxGuests() external view returns (uint256) {
+            return _MaxGuests;
+        }
 
         /*
             @dev Get the token associates to a guest 
@@ -245,8 +252,9 @@ contract newnewsletter is ERC5643 {
                 - uint256 tokenId_ : the token 
             @return : Counters.Counter : the numbe rof guest of a tokenId
         */
-        function get_numberOfguests(uint256 tokenId_) public view returns(Counters.Counter memory){
-            return _numberOfguests[tokenId_];
+        function get_numberOfguests(uint256 tokenId_) public view returns(uint256){
+            uint256 out = _numberOfguests[tokenId_].current();
+            return out;
         }
 
         /* E.3 [ERC 721 Functionnalities] */
@@ -264,7 +272,7 @@ contract newnewsletter is ERC5643 {
             address subscriber_ = msg.sender;
             /* Conditions */
             // 1. User has never subscribed 
-            require(balanceOf(subscriber_) <= 0, "This user can not be a guest");
+            require(balanceOf(subscriber_) <= 0, "This user can not have 2 active subscriotions simultaneously");
 
             /* Task */
 
@@ -278,6 +286,7 @@ contract newnewsletter is ERC5643 {
             _tokenIdHost[subscriber_] = tokenId_;
 
             // Step 3 : pay author and owner
+
             // pay the contract owner 
             uint256 value = msg.value;
             uint256 owner_fees = value.mul(20).div(100); 
@@ -287,7 +296,7 @@ contract newnewsletter is ERC5643 {
             // pay the author 
             uint256 author_fees = value.mul(80).div(100); 
             address payable author_payable = payable(_author);
-            author_payable .transfer(author_fees);
+            author_payable.transfer(author_fees);
 
             // Step 4 : emit an event 
             emit newSubscriber_cryptoWay(subscriber_, tokenId_);
@@ -303,7 +312,8 @@ contract newnewsletter is ERC5643 {
         function subscribe_fiatWay(address subscriber_, uint256 tokenId_) external payable isOwner() {
             /* Conditions */
             // 1. User has never subscribed 
-            require(balanceOf(subscriber_) <= 0, "This user can not be a guest");
+            require(balanceOf(subscriber_) <= 0, "This user can not have 2 active subscriotions simultaneously");
+            
 
             /* Task */
 
