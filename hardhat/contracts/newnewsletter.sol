@@ -38,7 +38,7 @@ contract newnewsletter is ERC5643 {
     // something is a guest or a Host 
     mapping(address => uint256) private _tokenIdHost;
 
-    // Mapping number of vistor to an Host
+    // Mapping number of guest to an Host
     mapping(uint256 => Counters.Counter)  private _numberOfguests;
 
     // Authorized guest 
@@ -59,7 +59,7 @@ contract newnewsletter is ERC5643 {
 
 
     // emit an invitation to a guest 
-    event guestInvitation(address indexed guest_, address indexed host_, uint256 indexed tokenId_);
+    event guestInvitation(address indexed guest_, uint256 indexed tokenId_, uint256 indexed currentNbGuests_);
 
     // emit a subscription | payment in Fiat
     event newSubscriber_fiatWay(address indexed subscriber_, uint256 indexed tokenId_);
@@ -117,15 +117,19 @@ contract newnewsletter is ERC5643 {
             require (currentNbGuests < _MaxGuests, "you can not add new guests to your susbscription !");
             
             // 4. Guest has never been subscribed or been a guest 
-            require (get_tokenIdHost(guest_) == uint256(0), "This guest has already been associated to a token");
+            require (_tokenAuthorisations[guest_] == 0, "This guest has already been associated to a token");
 
             /* Task */
 
             // Step 0 : let's authorize 
             _tokenAuthorisations[guest_] = tokenId_;
 
-            // Step 1 : emit an event 
-            emit guestInvitation(guest_, msg.sender, tokenId_);
+            // Step 1 : increment _numberOfguests
+            _numberOfguests[tokenId_].increment() ; 
+            currentNbGuests = _numberOfguests[tokenId_].current();
+
+            // Step 2 : emit an event 
+            emit guestInvitation(guest_, tokenId_,currentNbGuests);
         }
 
         /*
@@ -133,28 +137,24 @@ contract newnewsletter is ERC5643 {
           @params : 
             - uint256 tokenId_ : the token subscription 
         */
-        function becomeGuest_fiatWay(uint256 tokenId_) external isOwner() {
+        function becomeGuest_fiatWay(address guest_, uint256 tokenId_) external isOwner() {
             /* Conditions */ 
             // 1. Host has authorized this user to be his guest 
-            //require(_tokenAuthorisations[msg.sender] == tokenId_, "No one authorizes you to be a guest");
+            require(_tokenAuthorisations[guest_] == tokenId_, "No one authorizes you to be a guest");
 
             // 2. The token can have new guests
             uint256 currentNbGuests = _numberOfguests[tokenId_].current();
             require (currentNbGuests < _MaxGuests, "you can not add new guests to your susbscription !");
             
             // 3. Guest has never been subscribed or been a guest 
-            require (get_tokenIdHost(msg.sender) == uint256(0), "This guest has already been associated to a token");
+            require (get_tokenIdHost(guest_) == 0, "This guest has already been associated to a token");
       
             /* Task */
-            // Step 0 : add a vistor 
-            _tokenIdHost[msg.sender] = tokenId_;
+            // Step 0 : add a guest 
+            _tokenIdHost[guest_] = tokenId_;
 
-            // Step 1 : increment _numberOfguests
-            _numberOfguests[tokenId_].increment() ; 
-            uint256 currentNbVistors = _numberOfguests[tokenId_].current();
-
-            // Step 2 : emit event 
-            emit guestSet_fiatWay(msg.sender, tokenId_, currentNbVistors) ;
+            // Step 1 : emit event 
+            emit guestSet_fiatWay(guest_, tokenId_, currentNbGuests) ;
             
         } 
 
@@ -176,14 +176,10 @@ contract newnewsletter is ERC5643 {
             require (get_tokenIdHost(msg.sender) == uint256(0), "This guest has already been associated to a token");
       
             /* Task */
-            // Step 0 : add a vistor 
+            // Step 0 : add a guest 
             _tokenIdHost[msg.sender] = tokenId_;
 
-            // Step 1 : increment _numberOfguests
-            _numberOfguests[tokenId_].increment() ; 
-            uint256 currentNbVistors = _numberOfguests[tokenId_].current();
-
-            // Step 2 : Fees payment
+            // Step 1 : Fees payment
             uint256 value = msg.value;
 
             // pay the contract owner 
@@ -206,61 +202,9 @@ contract newnewsletter is ERC5643 {
             
 
             // Step 3 : emit event 
-            emit guestSet_cryptoWay(msg.sender, tokenId_, currentNbVistors) ;
+            emit guestSet_cryptoWay(msg.sender, tokenId_, currentNbGuests) ;
             
         }
-
-        /* E.2 [Getter Function] */
-
-        /**
-        * @dev Return owner address 
-        * @return address of owner
-        */
-        function getOwner() external view returns (address) {
-            return _owner;
-        }
-
-        /**
-        * @dev Return author address 
-        * @return address of author
-        */
-        function getAuthor() external view returns (address) {
-            return _author;
-        }
-
-        /**
-        * @dev Return MaxGuests
-        * @return address of MaxGuests
-        */
-        function getMaxGuests() external view returns (uint256) {
-            return _MaxGuests;
-        }
-
-        /*
-            @dev Get the token associates to a guest 
-            @Params : 
-                - address user_ : the vistor
-            @return : uint256 : a tokenId 
-        */
-        function get_tokenIdHost(address guest_) public view returns(uint256){
-            return _tokenIdHost[guest_];
-        }
-
-        /*
-            @dev Get the number of guests of a token 
-            @Params : 
-                - uint256 tokenId_ : the token 
-            @return : Counters.Counter : the numbe rof guest of a tokenId
-        */
-        function get_numberOfguests(uint256 tokenId_) public view returns(uint256){
-            uint256 out = _numberOfguests[tokenId_].current();
-            return out;
-        }
-
-        /* E.3 [ERC 721 Functionnalities] */
-
-        // cancelSubscription : not cancel subcription 
-        // si on peut 
 
         /*
             @dev a user subscribe to our service | Payment in Crypto
@@ -330,6 +274,66 @@ contract newnewsletter is ERC5643 {
             emit newSubscriber_fiatWay(subscriber_, tokenId_);
 
         }
+
+        /* E.2 [Getter Function] */
+
+        /**
+        * @dev Return owner address 
+        * @return address of owner
+        */
+        function getOwner() external view returns (address) {
+            return _owner;
+        }
+
+        /**
+        * @dev Return author address 
+        * @return address of author
+        */
+        function getAuthor() external view returns (address) {
+            return _author;
+        }
+
+        /**
+        * @dev Return MaxGuests
+        * @return address of MaxGuests
+        */
+        function getMaxGuests() external view returns (uint256) {
+            return _MaxGuests;
+        }
+
+        /*
+            @dev Get the token associates to a guest 
+            @Params : 
+                - address user_ : the guest
+            @return : uint256 : a tokenId 
+        */
+        function get_tokenIdHost(address guest_) public view returns(uint256){
+            return _tokenIdHost[guest_];
+        }
+
+        /*
+            @dev Get the number of guests of a token 
+            @Params : 
+                - uint256 tokenId_ : the token 
+            @return : Counters.Counter : the numbe rof guest of a tokenId
+        */
+        function get_numberOfguests(uint256 tokenId_) public view returns(uint256){
+            uint256 out = _numberOfguests[tokenId_].current();
+            return out;
+        }
+
+        /*
+            @dev Get  _tokenAuthorisations[guest_]
+            @Params : 
+                - guest_ : the guest to assess 
+            @return : Counters.Counter : the numbe rof guest of a tokenId
+        */
+        function get_tokenAuthorisations(address guest_) public view returns(uint256){
+            uint256 out =  _tokenAuthorisations[guest_];
+            return out;
+        }
+
+        /* E.3 [ERC 721 Functionnalities] */
 
     /**
      * @dev See {IERC721-transferFrom}. | Transfer is not possible 

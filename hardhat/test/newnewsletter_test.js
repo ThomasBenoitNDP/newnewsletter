@@ -213,4 +213,493 @@ const {
   })
 
 
+  /*
+  * Test 3 : authorizesGuest
+  */
+  describe("### T.3 : authorizeGuest ", function () {
+
+    // 3.1 L'utilisateur devient un guest du subscriber
+    it("-> T.3.1 : a user become a guest of a subscriber ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : a user subscribes
+      const tokenId = 45;
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId);
+
+      // Step 1 : the subscriber authorize a guest 
+      await newnewsletter_cryptoWay.authorizesGuest(tokenId, guest_1.address);
+
+      expect( await newnewsletter_cryptoWay.get_tokenAuthorisations(guest_1.address)).to.equal(tokenId)
+      expect( await newnewsletter_cryptoWay.get_numberOfguests(tokenId)).to.equal(1)
+
+    })
+
+    // 3.2 : the event is emmitted guestInvitation(guest_, msg.sender, tokenId_)
+    it("-> T.3.2 : guestInvitation event is emitted ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : a user subscribes
+      const tokenId = 45;
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId);
+
+      await expect(await newnewsletter_cryptoWay.authorizesGuest(tokenId, guest_1.address))
+      .to.emit(newnewsletter, "guestInvitation")
+      .withArgs(guest_1.address, tokenId, 1);
+
+
+    })
+
+    // 3.3 Guest has no current subscription
+    it("-> T.3.3 : Guest has no current subscription ", async function () {
+       const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+    
+       // Step 0 : a user subscribes
+       const tokenId = 45;
+       const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+       await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId);
+    
+       // Step 1 : guest subscribes to 
+       const tokenId_guest = 46;
+       const newnewsletter_cryptoWay_guest = await newnewsletter.connect(guest_1);
+       await newnewsletter_cryptoWay_guest.subscribe_cryptoWay(tokenId_guest);
+    
+       await expect( newnewsletter_cryptoWay.authorizesGuest(tokenId, guest_1.address)).to.be.revertedWith("This user can not be a guest");
+    
+    })
+
+    // 3.4 Subscriber owns the token
+    it("-> T.3.4 : Subscriber owns the token ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+   
+      // Step 0 : a user subscribes
+      const tokenId = 45;
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId);
+
+      // Step 1 : an other user subscribe 
+      const tokenId_2 = 46;
+      const newnewsletter_cryptoWay_guest_1 = await newnewsletter.connect(guest_1);
+      await newnewsletter_cryptoWay_guest_1.subscribe_cryptoWay(tokenId_2);
+   
+      await expect( newnewsletter_cryptoWay.authorizesGuest(tokenId_2, guest_2.address)).to.be.revertedWith("Caller is not owner nor approved");
+   
+   })
+
+    // 3.5 No more than _MaxGuests guests
+    it("-> T.3.5 : No more than _MaxGuests guests", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+   
+      // Step 0 : a user subscribes
+      const tokenId = 45;
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId);
+
+      const MaxGuests = await newnewsletter_cryptoWay.getMaxGuests()
+
+      // authorize guest_1
+      newnewsletter_cryptoWay.authorizesGuest(tokenId, guest_1.address)
+      
+      // authorize guest_2
+      newnewsletter_cryptoWay.authorizesGuest(tokenId, guest_2.address)
+   
+      // authorize guest_3
+      await expect( newnewsletter_cryptoWay.authorizesGuest(tokenId, guest_3.address)).to.be.revertedWith("you can not add new guests to your susbscription !");
+   
+   })
+
+   // 3.6 Guest has never been subscribed 
+   it("-> T.3.6 : Guest has never been subscribed ", async function () {
+    const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+ 
+    // Step 0 : guest subcribes 
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay_guest_1 = await newnewsletter.connect(guest_1);
+    await newnewsletter_cryptoWay_guest_1.subscribe_cryptoWay(tokenId_1);
+
+    // Step 1 : guest cancels his subscription 
+    await newnewsletter_cryptoWay_guest_1.cancelSubscription(tokenId_1);
+
+    // Step 2 : a user subscribe 
+    const tokenId_2 = 46;
+    const newnewsletter_cryptoWay_subscriber = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay_subscriber.subscribe_cryptoWay(tokenId_2);
+
+    // Step 3 : subscriber authorize guest 
+    await expect( newnewsletter_cryptoWay_subscriber.authorizesGuest(tokenId_2, guest_1.address)).to.be.revertedWith("This user can not be a guest");
+ 
+ })
+
+   // 3.7 Guest has never been a guest 
+   it("-> T.3.7 : Guest has never been a guest ", async function () {
+    const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+ 
+    // Step 0 : subscriber1 subcribes 
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+    // Step 1 : subscriber1 authorize guest_1
+    await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+    // Step 2 : subscriber2 subcribes 
+    const tokenId_2 = 46;
+    const newnewsletter_cryptoWay_guest_2 = await newnewsletter.connect(guest_2);
+    await newnewsletter_cryptoWay_guest_2.subscribe_cryptoWay(tokenId_2);
+
+    // Step 3 : subscriber2 authorize guest1 
+    await expect( newnewsletter_cryptoWay_guest_2.authorizesGuest(tokenId_2, guest_1.address)).to.be.revertedWith("This guest has already been associated to a token");
+ 
+ })
+
+
+  })
+
+  /*
+  * Test 4 : becomeGuest_fiatWay
+  */
+    describe("### T.4 : becomeGuest_fiatWay ", function () {
+      // 4.1 a user accepts to be a guest
+      it("-> T.4.1 : a user accepts to be a guest ", async function () {
+        const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : subscriber1 subcribes 
+      const tokenId_1 = 45;
+      //
+      await newnewsletter.subscribe_fiatWay(subscriber.address, tokenId_1);
+
+
+      // Step 1 : subscriber1 authorize guest_1
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+      // Step 2 : guest accepts the invitation 
+      await newnewsletter.becomeGuest_fiatWay(guest_1.address, tokenId_1);
+
+      expect(await newnewsletter_cryptoWay.get_tokenIdHost(guest_1.address)).to.equal(tokenId_1)
+      })
+  
+     // 4.2 guestSet_fiatWay was emited 
+     it("-> T.4.2 : guestSet_fiatWay is emitted ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : subscriber1 subcribes 
+      const tokenId_1 = 45;
+      await newnewsletter.subscribe_fiatWay(subscriber.address, tokenId_1);
+
+      // Step 1 : subscriber1 authorize guest_1
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+      // Step 2 : guest accepts the invitation 
+      await expect(await newnewsletter.becomeGuest_fiatWay(guest_1.address, tokenId_1))
+      .to.emit(newnewsletter, "guestSet_fiatWay")
+      .withArgs(guest_1.address, tokenId_1, 1);
+     })
+
+    // 4.3. Host has authorized this user to be his guest 
+    it("-> T.4.3 : If a guest is not authorized, he could not be guest  ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : subscriber1 subcribes 
+      const tokenId_1 = 45;
+      await newnewsletter.subscribe_fiatWay(subscriber.address, tokenId_1);
+
+      // Step 2 a user attempts to become a guest without authorization 
+      await expect( newnewsletter.becomeGuest_fiatWay(guest_1.address, tokenId_1)).to.be.revertedWith("No one authorizes you to be a guest");
+
+
+    })
+
+    it("-> T.4.4 : If a subscriber authorized a guest, the guest could not be the guest of another user ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : subscriber1 subcribes 
+      const tokenId_1 = 45;
+      await newnewsletter.subscribe_fiatWay(subscriber.address, tokenId_1);
+
+      // Step 1 : subscriber2 subcribes 
+      const tokenId_2 = 46;
+      await newnewsletter.subscribe_fiatWay(guest_1.address, tokenId_2);
+
+
+      // Step 2 : subscriber2 authorizes a guest 
+      const newnewsletter_cryptoWay = await newnewsletter.connect(guest_1);
+      await newnewsletter_cryptoWay.authorizesGuest(tokenId_2, guest_2.address)
+
+      // Step 3 : The guest attempt to be guest of subscriber 1
+      await expect( newnewsletter.becomeGuest_fiatWay(guest_2.address, tokenId_1)).to.be.revertedWith("No one authorizes you to be a guest");
+
+
+    })
+
+    it("-> T.4.5 : user attempts to become a guest twice ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : subscriber1 subcribes 
+      const tokenId_1 = 45;
+      await newnewsletter.subscribe_fiatWay(subscriber.address, tokenId_1);
+
+      // Step 1 : subscriber1 authorize guest_1
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+      // Step 2 : guest accepts the invitation 
+      await newnewsletter.becomeGuest_fiatWay(guest_1.address, tokenId_1);
+
+      // Step 3 : the guest attempt to become a guest 
+      await expect( newnewsletter.becomeGuest_fiatWay(guest_1.address, tokenId_1)).to.be.revertedWith("This guest has already been associated to a token");
+
+    })
+    
+    it("-> T.4.6 : user attempts to become a guest of another user  ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : subscriber1 and subscriber2 subcribes 
+      const tokenId_1 = 45;
+      await newnewsletter.subscribe_fiatWay(subscriber.address, tokenId_1);
+
+      const tokenId_2 = 46;
+      await newnewsletter.subscribe_fiatWay(guest_2.address, tokenId_2);
+
+      // Step 1 : subscriber1 authorize guest_1
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+      // Step 2 : guest accepts the invitation 
+      await newnewsletter.becomeGuest_fiatWay(guest_1.address, tokenId_1);
+
+      // Step 3 : the guest attempt to become a guest 
+      await expect( newnewsletter.becomeGuest_fiatWay(guest_1.address, tokenId_2)).to.be.revertedWith("No one authorizes you to be a guest");
+
+    })
+    
+    it("-> T.4.7 : user attempts to become a guest after subscribing ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : subscriber1 subcribes 
+      const tokenId_1 = 45;
+      await newnewsletter.subscribe_fiatWay(subscriber.address, tokenId_1);
+
+      // Step 1 : subscriber1 authorize guest_1
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+      // Step 2 : guest accepts the invitation 
+      await newnewsletter.becomeGuest_fiatWay(guest_1.address, tokenId_1);
+
+      // Step 0 : subscriber1 subcribes 
+      const tokenId_2 = 46;
+      await newnewsletter.subscribe_fiatWay(guest_1.address, tokenId_2);
+
+      // Step 3 : the guest attempt to become a guest 
+      await expect( newnewsletter.becomeGuest_fiatWay(guest_1.address, tokenId_1)).to.be.revertedWith("This guest has already been associated to a token");
+
+    })
+
+  })
+
+
+  /*
+  * Test 5 : becomeGuest_cryptoway
+  */
+  describe("### T.5 : becomeGuest_cryptoway", function () {
+    it("-> T.5.1 : a user accepts to be a guest ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+    // Step 0 : subscriber1 subcribes 
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+
+    // Step 1 : subscriber1 authorize guest_1
+    await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+    // Step 2 : guest accepts the invitation 
+    const newnewsletter_cryptoWay_guest = await newnewsletter.connect(guest_1);
+    await  newnewsletter_cryptoWay_guest.becomeGuest_cryptoWay(tokenId_1);
+
+    expect(await newnewsletter_cryptoWay_guest.get_tokenIdHost(guest_1.address)).to.equal(tokenId_1)
+    })
+
+   // 5.2 guestSet_fiatWay was emited 
+   it("-> T.5.2 : guestSet_cryptoWay is emitted ", async function () {
+    const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+    // Step 0 : subscriber1 subcribes 
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+    // Step 1 : subscriber1 authorize guest_1
+    await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+    // Step 2 : guest accepts the invitation 
+    const newnewsletter_cryptoWay_guest = await newnewsletter.connect(guest_1);
+
+    await expect(await newnewsletter_cryptoWay_guest.becomeGuest_cryptoWay(tokenId_1))
+    .to.emit(newnewsletter_cryptoWay_guest, "guestSet_cryptoWay")
+    .withArgs(guest_1.address, tokenId_1, 1);
+   })
+
+  it("-> T.5.3 : test crypto transfer ", async function () {
+    const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+    // Step 0 : subscriber1 subcribes 
+    const subAmount = "1.0";
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+
+    // Step 1 : subscriber1 authorize guest_1
+    await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+    // Step 2 : guest accepts the invitation 
+    const newnewsletter_cryptoWay_guest = await newnewsletter.connect(guest_1);
+
+    await expect( await  newnewsletter_cryptoWay_guest.becomeGuest_cryptoWay(tokenId_1, {value: ethers.utils.parseEther(subAmount)}))
+    .to.changeEtherBalances([guest_1.address, subscriber.address, _author.address, _owner.address], [ethers.utils.parseEther("-1.0"), ethers.utils.parseEther("0.3"), ethers.utils.parseEther("0.5"), ethers.utils.parseEther("0.2")]);
+
+  })
+
+  
+  // 5.3. Host has authorized this user to be his guest 
+  it("-> T.5.4 : If a guest is not authorized, he could not be guest  ", async function () {
+    const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+    // Step 0 : subscriber1 subcribes 
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+    // Step 2 : guest accepts the invitation 
+    const newnewsletter_cryptoWay_guest = await newnewsletter.connect(guest_1);
+
+    // Step 2 a user attempts to become a guest without authorization 
+    await expect( newnewsletter_cryptoWay_guest.becomeGuest_cryptoWay(tokenId_1)).to.be.revertedWith("No one authorizes you to be a guest");
+
+
+  })
+
+  it("-> T.5.5 : If a subscriber authorized a guest, the guest could not be the guest of another user ", async function () {
+    const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+    // Step 0 : subscriber1 subcribes 
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+    // Step 1 : subscriber2 subcribes 
+    const tokenId_2 = 46;
+    const newnewsletter_cryptoWay_sub2 = await newnewsletter.connect(guest_1);
+    await newnewsletter_cryptoWay_sub2.subscribe_cryptoWay(tokenId_2);
+
+
+    // Step 2 : subscriber2 authorizes a guest 
+    await newnewsletter_cryptoWay_sub2 .authorizesGuest(tokenId_2, guest_2.address)
+
+    // Step 3 : The guest attempt to be guest of subscriber 1
+    const newnewsletter_cryptoWay_guest = await newnewsletter.connect(guest_2);
+    await expect( newnewsletter_cryptoWay_guest.becomeGuest_cryptoWay(tokenId_1)).to.be.revertedWith("No one authorizes you to be a guest");
+
+  })
+
+
+  it("-> T.5.6 : user attempts to become a guest twice ", async function () {
+    const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+    // Step 0 : subscriber1 subcribes 
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+    // Step 1 : subscriber1 authorize guest_1
+    await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+    // Step 2 : guest accepts the invitation 
+    const newnewsletter_cryptoWay_guest = await newnewsletter.connect(guest_1);
+    await  newnewsletter_cryptoWay_guest.becomeGuest_cryptoWay(tokenId_1);
+
+    // Step 3 : the guest attempt to become a guest 
+    await expect(  newnewsletter_cryptoWay_guest.becomeGuest_cryptoWay(tokenId_1)).to.be.revertedWith("This guest has already been associated to a token");
+
+  })
+  
+  it("-> T.5.7 : user attempts to become a guest of another user  ", async function () {
+    const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+    // Step 0 : subscriber1 subcribes 
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+    // Step 1 : subscriber2 subcribes 
+    const tokenId_2 = 46;
+    const newnewsletter_cryptoWay_sub2 = await newnewsletter.connect(guest_2);
+    await newnewsletter_cryptoWay_sub2.subscribe_cryptoWay(tokenId_2);
+
+    // Step 1 : subscriber1 authorize guest_1
+    await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+    // Step 2 : guest accepts the invitation 
+    const newnewsletter_cryptoWay_guest = await newnewsletter.connect(guest_1);
+    await newnewsletter_cryptoWay_guest .becomeGuest_cryptoWay(tokenId_1);
+
+    // Step 3 : the guest attempt to become a guest 
+    await expect( newnewsletter_cryptoWay_guest .becomeGuest_cryptoWay(tokenId_2)).to.be.revertedWith("No one authorizes you to be a guest");
+
+  })
+  
+  it("-> T.5.8 : user attempts to become a guest after subscribing ", async function () {
+    const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+    // Step 0 : subscriber1 subcribes 
+    const tokenId_1 = 45;
+    const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+    await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+    // Step 1 : subscriber1 authorize guest_1
+    await newnewsletter_cryptoWay.authorizesGuest(tokenId_1, guest_1.address)
+
+    // Step 2 : guest accepts the invitation 
+    const newnewsletter_cryptoWay_guest = await newnewsletter.connect(guest_1);
+    await newnewsletter_cryptoWay_guest.becomeGuest_cryptoWay(tokenId_1);
+
+    // Step 0 : subscriber1 subcribes 
+    const tokenId_2 = 46;
+    await newnewsletter_cryptoWay_guest.subscribe_cryptoWay(tokenId_2);
+
+    // Step 3 : the guest attempt to become a guest 
+    await expect( newnewsletter_cryptoWay_guest.becomeGuest_cryptoWay(tokenId_1)).to.be.revertedWith("This guest has already been associated to a token");
+
+  })
+
+})
+
+  /*
+  * Test 6 : Transfer
+  */
+  describe("### T.6 : Transfer", function () {
+    it("-> T.6.1 : Subscription is not transferable ", async function () {
+      const { newnewsletter, _name, _symbol, _owner, _author, subscriber, guest_1, guest_2, guest_3, no_sub_1} = await loadFixture(deployNewNewsLetter);
+
+      // Step 0 : subscriber1 subcribes 
+      const tokenId_1 = 45;
+      const newnewsletter_cryptoWay = await newnewsletter.connect(subscriber);
+      await newnewsletter_cryptoWay.subscribe_cryptoWay(tokenId_1);
+
+      // Step 1 : user attepts to transfer 
+      await newnewsletter_cryptoWay.transferFrom(subscriber.address, guest_1.address, tokenId_1);
+
+      // Transfer was blocked
+      expect(await newnewsletter_cryptoWay.balanceOf(subscriber.address)).to.equal(1)
+      expect(await newnewsletter_cryptoWay.balanceOf(guest_1.address)).to.equal(0)
+
+    })
+
+  })
+
 })
