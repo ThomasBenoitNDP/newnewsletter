@@ -1,0 +1,60 @@
+name: CICD SetInStone
+
+on:
+  workflow_dispatch:
+    inputs:
+      report:
+        description: 'Generate full report (true/false)'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y zip jq
+
+      - name: Set archive name
+        id: vars
+        run: |
+          repo_name="${GITHUB_REPOSITORY##*/}"
+          branch_or_tag="${GITHUB_REF_NAME}"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            archive_name="${repo_name}_${branch_or_tag}.zip"
+          else
+            archive_name="${repo_name}_${branch_or_tag}.zip"
+          fi
+          echo "archive_name=$archive_name" >> $GITHUB_OUTPUT
+      
+      - name: Compress repository
+        run: |
+          zip -r "${{ steps.vars.outputs.archive_name }}" . -x ".git/*" -x ".github/*"
+      - name: Upload to SetInStone API and save response
+        id: upload
+        run: |
+          archive="${{ steps.vars.outputs.archive_name }}"
+          response=$(curl --silent --request POST \
+            --url https://app.setinstone.io/app/api_service/archive \
+            --header "Content-Type: multipart/form-data" \
+            --form "archive=@$archive;type=application/zip" \
+            --form "apiKey=${{ secrets.SETINSTONE_API_KEY }}" \
+            --form "report=${{ inputs.report }}")
+          echo "API response: $response"
+          echo "$response" > api_response.json
+          scan_url=$(echo "$response" | jq -r .scanUrl)
+          echo "Scan URL: $scan_url"
+          echo "scan_url=$scan_url" >> $GITHUB_OUTPUT
+      - name: Upload API response as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-response
+          path: api_response.json
