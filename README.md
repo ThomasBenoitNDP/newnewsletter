@@ -1,7 +1,6 @@
 # newnewsletter
 
 [![CI main.yml](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main.yml)
-[![CI main2.yml](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main2.yml/badge.svg?branch=main)](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main2.yml)
 [![CI main3.yml](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main3.yml/badge.svg?branch=main)](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main3.yml)
 [![Dernier commit](https://img.shields.io/github/last-commit/ThomasBenoitNDP/newnewsletter)](https://github.com/ThomasBenoitNDP/newnewsletter/commits/main)
 [![Issues ouvertes](https://img.shields.io/github/issues/ThomasBenoitNDP/newnewsletter)](https://github.com/ThomasBenoitNDP/newnewsletter/issues)
