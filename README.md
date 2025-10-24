@@ -5,7 +5,7 @@
 [![Dernier commit](https://img.shields.io/github/last-commit/ThomasBenoitNDP/newnewsletter)](https://github.com/ThomasBenoitNDP/newnewsletter/commits/main)
 [![Issues ouvertes](https://img.shields.io/github/issues/ThomasBenoitNDP/newnewsletter)](https://github.com/ThomasBenoitNDP/newnewsletter/issues)
 [![Licence](https://img.shields.io/github/license/ThomasBenoitNDP/newnewsletter)](./LICENSE)
-[![Documented with Setinstone.io ⛰️](https://img.shields.io/badge/Documented%20with-Set%20In%20Stone-success?logo=book&logoColor=white)](https://setinstone.io)
+[![Documented with Setinstone.io](https://img.shields.io/badge/Documented%20with-Setinstone.io%20⛰️-success?logo=book&logoColor=white)](https://setinstone.io)
 
 ## Présentation
 newnewsletter est un projet de contrats intelligents pour gérer des abonnements on-chain à une newsletter, en s'appuyant sur le standard ERC‑5643 (abonnements renouvelables/expirables). Le dépôt contient un environnement Hardhat avec les contrats Solidity, les scripts de déploiement et des tests.
