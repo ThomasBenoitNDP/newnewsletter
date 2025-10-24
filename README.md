@@ -96,7 +96,7 @@ License file status: to be confirmed. If no LICENSE file exists, please add one 
 - Built with Hardhat, Ethers, and OpenZeppelin Contracts.
 - Implements concepts from the ERC-5643 renewable/expirable subscription standard.
 
-##⛰️ Documented With SetinStone.io
+## ⛰️ Documented With SetinStone.io
  Focus on the only task that matters: building your codebase!With every developer push, Set In Stone's Mirror Documentation Agent updates your README.md via a pull request — ready for you to review, edit, and approve.
 
 Book a demo :  https://setinstone.io 
