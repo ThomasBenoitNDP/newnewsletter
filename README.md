@@ -2,7 +2,7 @@
 
 # newnewsletter
 
-Smart contracts for on-chain newsletter subscriptions aligned with ERC-5643 (renewable and expirable subscriptions), packaged with a Hardhat workspace for development, testing, and deployment.
+Smart contracts for on-chain newsletter subscriptions aligned with ERC‑5643 (renewable and expirable subscriptions), packaged with a Hardhat workspace for development, testing, and deployment. Status: work in progress; not audited.
 
 [![CI main.yml](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main.yml)
 [![CI main2.yml](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main2.yml/badge.svg?branch=main)](https://github.com/ThomasBenoitNDP/newnewsletter/actions/workflows/main2.yml)
@@ -12,91 +12,111 @@ Smart contracts for on-chain newsletter subscriptions aligned with ERC-5643 (ren
 [![License](https://img.shields.io/github/license/ThomasBenoitNDP/newnewsletter)](./LICENSE)
 
 ## Overview
-newnewsletter is a Solidity-based project to create, renew, and cancel on-chain newsletter subscriptions. It exposes primitives to query subscription state and expiration, and includes Hardhat scripts and tests for local development and deployment to EVM networks.
-
-Status: work in progress. Documentation will evolve alongside releases and audits.
+newnewsletter provides building blocks to create, renew, and cancel on-chain newsletter subscriptions according to ERC‑5643. It includes a Hardhat workspace with contracts, tests, and deployment scripts for EVM-compatible networks. Documentation will evolve alongside releases and any future audits.
 
 ### Key goals
-- Manage subscription lifecycles on-chain: creation, renewal, cancellation.
-- Provide visibility into subscription state and expiration.
+- Manage subscription lifecycles on-chain: creation, renewal, and cancellation.
+- Provide visibility into subscription status and expiration.
 - Streamline local development, testing, and deployment with Hardhat.
 
-## Repository structure
+## Architecture and repository structure
 - .github/workflows: CI pipelines for build and tests.
-- hardhat/contracts: core domain (IERC5643, ERC5643, newnewsletter, and a sample Lock contract).
+- hardhat/contracts: core Solidity contracts (IERC5643, ERC5643, newnewsletter, Lock sample).
 - hardhat/scripts: deployment scripts for contracts.
-- hardhat/test: automated tests for key contracts.
+- hardhat/test: automated tests for core contracts.
 - hardhat/hardhat.config.js: Hardhat configuration.
 - hardhat/package.json: Node dependencies and scripts for the Hardhat workspace.
 
-## Prerequisites
-- Node.js LTS (for example 18) and npm.
-- An EVM RPC endpoint for targeted networks (local dev, testnet, or mainnet).
-- A developer account and a private key stored securely using local environment variables and encrypted CI secrets.
+## Getting started
+### Prerequisites
+- Node.js LTS and npm.
+- An EVM RPC endpoint for your target network (local, testnet, or mainnet).
+- A developer account and private key stored securely via environment variables locally and encrypted secrets in CI.
 
-## Installation
-1. Clone the repository.
-2. Navigate to the hardhat subfolder.
-3. Install the Node dependencies defined in hardhat/package.json.
+### Installation
+- Clone the repository.
+- Navigate into the hardhat workspace directory.
+- Install the Node dependencies listed in the workspace package manifest.
 
-## Configuration
-- Create a local environment file that defines RPC endpoint, deployment key, and target network identifiers.
-- Review the Solidity version in hardhat/hardhat.config.js and ensure dependency compatibility (Hardhat, Ethers, OpenZeppelin).
-- For CI, store secrets in GitHub Actions encrypted secrets and never commit private keys.
+### Configuration
+- Create a local environment file for RPC endpoint, private key, and target network identifiers.
+- Review the Solidity version in the Hardhat configuration and ensure compatibility with dependencies (Hardhat, Ethers, OpenZeppelin).
+- For CI, store secrets in GitHub Actions encrypted secrets. Never commit private keys or seed phrases.
 
 ## Usage
-- Build and compile the contracts with Hardhat using the appropriate task.
-- Run the test suite from the hardhat folder.
-- Deploy using the available deployment scripts, then record deployed addresses per network in this README or in a Release.
+- Compile the contracts using the Hardhat toolchain.
+- Run the automated tests in the workspace.
+- Deploy using the provided deployment scripts to your chosen network, then record deployed addresses per network.
 
 ## Testing
-- Tests reside in hardhat/test and cover newnewsletter and the Lock sample.
-- Run the tests via the Hardhat test runner in the hardhat folder.
+- The test suite resides under hardhat/test and covers the newnewsletter contract and a Lock sample.
+- Ensure your environment is configured before running the test runner.
 
 ## Deployment
-- Deployment scripts are available in hardhat/scripts (for example deploy.js and deploy_newnewsletter.js).
-- Prepare the required environment variables (RPC endpoint, private key, target network) before running a deployment.
-- After deploying, document the contract address, network, and verification status.
+- Deployment scripts are located under hardhat/scripts.
+- Prepare required environment variables (RPC endpoint, deployer key, network).
+- After deployment, document the contract address, target network, and whether the contract has been verified on the relevant explorer.
 
-## Contract overview
+## Contracts overview
 | name | file | description | inputs | outputs |
 |---|---|---|---|---|
-| IERC5643 | hardhat/contracts/IERC5643.sol | Interface for renewable/expirable subscriptions per ERC-5643 | Typical: token or subscription identifier, subscriber address, renewal period or expiration timestamp (implementation dependent) | Typical: expiration timestamp, status booleans, subscription-related events |
-| ERC5643 | hardhat/contracts/ERC5643.sol | Reference implementation of the ERC-5643 interface | Usually: identifier, renewal period configuration, authorized operator or owner for administrative actions | Emits events for renewal and cancellation; updates and returns new expiration values |
-| newnewsletter | hardhat/contracts/newnewsletter.sol | Business contract for newsletter subscriptions built atop ERC-5643 primitives | Likely: price, currency, renewal period, beneficiary/treasury, subscriber identifier; admin controls for parameters | Subscription identifier, active status, expiration, and domain events for subscribe, renew, cancel |
-| Lock | hardhat/contracts/Lock.sol | Hardhat sample contract (unrelated to subscriptions) | Lock parameters such as unlock date and depositor | Lock state and withdrawal events |
+| IERC5643 | hardhat/contracts/IERC5643.sol | Interface for renewable and expirable subscriptions per ERC‑5643 | Typical: subscriber address or token/subscription identifier; renewal period or expiration timestamp (as applicable) | Typical: expiration timestamp, status flags, and subscription events |
+| ERC5643 | hardhat/contracts/ERC5643.sol | Reference implementation of the ERC‑5643 interface | Common: identifier, renewal configuration, caller permissions for renewal/cancellation | Emits renewal/cancellation events; updates and exposes expiration values |
+| newnewsletter | hardhat/contracts/newnewsletter.sol | Newsletter-specific logic using ERC‑5643 primitives | Likely: subscription price, currency, renewal period, treasury/beneficiary, subscriber identifier; admin controls for parameters | Subscription state (active, expiration), and domain events for subscribe, renew, cancel |
+| Lock | hardhat/contracts/Lock.sol | Example contract included by Hardhat (unrelated to subscriptions) | Lock parameters such as unlock date and depositor | Lock state and withdrawal-related events |
 
-Notes: The exact function signatures and behaviors should be verified in the source. The inputs and outputs listed above reflect typical ERC-5643 patterns and may require adjustment to match the implementation.
+Notes: Validate exact function signatures and events in source before integration. Inputs and outputs above reflect common ERC‑5643 patterns.
+
+## Networks and deployed addresses
+- Please add a simple table of network name, chain ID, contract address, and verification status after each deployment.
+
+## Dependencies
+Primary workspace dependencies for transparency and supply-chain review:
+- @nomicfoundation/hardhat-toolbox (dev)
+- @nomiclabs/hardhat-ethers (dev)
+- @openzeppelin/hardhat-upgrades (dev)
+- hardhat (dev)
+- ethers
+- @openzeppelin/contracts
+- openzeppelin-solidity
+
+Consider generating and publishing a Software Bill of Materials (SBOM) with each release for enhanced supply-chain transparency.
+
+## Versioning and changelog
+- Recommend Semantic Versioning for contract and repository version tags.
+- Maintain a CHANGELOG.md capturing features, fixes, and breaking changes per release.
+- Use GitHub Releases to publish artifacts (addresses, SBOM, checksums) and link them here.
 
 ## Security and compliance (visible controls)
-- Reviews and traceability: all changes via Pull Requests with mandatory CI checks before merging to main.
-- Access control: document administrative functions and restrict sensitive operations to authorized accounts (for example, owner or role-based access). Consider documenting roles and privileges explicitly.
-- Secrets management: never commit private keys; use environment variables locally and encrypted GitHub Actions secrets in CI.
-- Dependency hygiene: maintain an inventory of dependencies and a regular update cadence; address vulnerabilities promptly.
-- Policy artifacts: add a SECURITY.md for reporting vulnerabilities and a responsible disclosure process; add CONTRIBUTING.md, CODE_OF_CONDUCT.md, CODEOWNERS, and CHANGELOG.md.
+- Reviews and traceability: changes via Pull Requests, with CI checks required before merging to main.
+- Access control: document administrative functions and restrict sensitive operations to authorized accounts (e.g., owner or role-based controls). Clearly define roles and privileges.
+- Secrets management: never commit private keys. Use environment variables locally and encrypted GitHub Actions secrets in CI.
+- Dependency hygiene: maintain an inventory of dependencies, update regularly, and address vulnerabilities promptly. Consider enabling Dependabot alerts and updates.
+- Audit readiness: maintain deployment records (network, block number, contract address, verification links). Capture test evidence in CI artifacts.
 
-## Versioning and release management
-- Adopt Semantic Versioning for contracts and tooling.
-- Tag releases and publish release notes summarizing changes, known issues, and upgrade considerations.
-- Track deployed addresses per network and link them in Releases.
+Alignments and recommendations
+- SOC 2: enforce branch protections and mandatory reviews; retain CI logs; document change management in PRs; restrict deployer credentials and monitor usage.
+- ISO 27001: define roles and responsibilities; maintain a risk register for contract changes; plan for business continuity of keys, RPC endpoints, and deployment metadata; keep supplier/dependency inventory current.
+- NIST 2: document incident reporting and communications; define response SLAs; perform post-incident reviews and link outcomes to issues and releases.
 
-## Support and contact
-- Open an Issue for bugs or feature requests.
-- For security concerns, follow the instructions in SECURITY.md once added.
-- Maintainer: ThomasBenoitNDP on GitHub.
+## Security policy and responsible disclosure
+- Add SECURITY.md with contact details, supported versions, and disclosure process. Until then, please open a private security advisory using GitHub's security advisories and avoid sharing sensitive details in public issues.
 
-## Contributing
-- Contributions are welcome. Please open an Issue to discuss significant changes before submitting a Pull Request.
-- Use descriptive PR titles and ensure CI passes. Include tests when possible for new or changed behaviors.
+## Contributing and governance
+- Add CONTRIBUTING.md with development conventions, branch strategy, commit messages, and review requirements.
+- Add CODE_OF_CONDUCT.md to set community expectations.
+
+## Maintainers and contact
+- Primary maintainer: ThomasBenoitNDP (GitHub).
+- Contributors: see the GitHub contributors graph. Thank you to all contributors.
 
 ## License
-License file status: to be confirmed. If no LICENSE file exists, please add one (for example, MIT) and update this section accordingly.
+- License file is referenced via badge. If not yet present, add a LICENSE file (e.g., MIT or Apache‑2.0) and confirm repository metadata.
 
 ## Acknowledgements
-- Built with Hardhat, Ethers, and OpenZeppelin Contracts.
-- Implements concepts from the ERC-5643 renewable/expirable subscription standard.
+- ERC‑5643 authors and the OpenZeppelin and Hardhat communities.
 
 ## ⛰️ Documented With SetinStone.io
- Focus on the only task that matters: building your codebase!With every developer push, Set In Stone's Mirror Documentation Agent updates your README.md via a pull request — ready for you to review, edit, and approve.
+ Focus on the only task that matters: building your codebase! With every developer push, Set In Stone's Mirror Documentation Agent updates your README.md via a pull request — ready for you to review, edit, and approve.
 
 Book a demo :  https://setinstone.io 
